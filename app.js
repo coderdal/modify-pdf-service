@@ -7,7 +7,8 @@ const { TEMP_FILE_DIR, RESULT_FILE_DIR, MAX_FILE_SIZE } = require('./constants')
 
 var compressPdfRouter = require('./routes/compress-pdf');
 var convertPdfRouter = require('./routes/convert-pdf');
-var protectPdfRouter = require('./routes/protect-pdf')
+var protectPdfRouter = require('./routes/protect-pdf');
+var removePdfProtectionRouter = require('./routes/remove-pdf-protection');
 var app = express();
 
 app.use("/result", express.static(path.join(__dirname, RESULT_FILE_DIR)));
@@ -28,5 +29,5 @@ app.use(cookieParser());
 app.use('/compress-pdf', compressPdfRouter);
 app.use('/convert-pdf', convertPdfRouter);
 app.use('/protect-pdf', protectPdfRouter);
-
+app.use('/remove-pdf-protection', removePdfProtectionRouter);
 module.exports = app;
