@@ -4,24 +4,26 @@ const {
     ServicePrincipalCredentials,
     PDFServices,
     MimeType,
-    CompressPDFJob,
-    CompressPDFResult,
-    CompressionLevel,
-    CompressPDFParams
+    ProtectPDFParams,
+    EncryptionAlgorithm,
+    ProtectPDFJob,
+    ProtectPDFResult
 } = require("@adobe/pdfservices-node-sdk");
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, TEMP_FILE_LIFETIME } = require('../constants');
+const { ALLOWED_FILE_TYPES, MAX_FILE_SIZE, TEMP_FILE_LIFETIME } = require('../constants');
 
-/* POST compress-pdf page. */
+/* POST protect-pdf page. */
 router.post('/', async function(req, res, next) {
+    if (!req?.files || !req?.files?.file) return res.status(400).json({ error: 'No file uploaded' });
+    const { file: uploadedFile } = req?.files;
+    const userPassword = req?.body?.password;
+    if (!userPassword) return res.status(400).json({ error: 'Password is required' });
     let readStream;
     try {
-        const { pdf: pdfFile } = req.files;
-        if (!pdfFile) return res.status(400).json({ error: 'No file uploaded' });
-        if (!ALLOWED_FILE_TYPES.includes(pdfFile.mimetype)) return res.status(400).json({ error: 'Invalid file type' });
-        if (pdfFile.size > MAX_FILE_SIZE) return res.status(400).json({ error: 'File size limit has been reached' });
+        if (!ALLOWED_FILE_TYPES.includes(uploadedFile?.mimetype)) return res.status(400).json({ error: 'Invalid file type' });
+        if (uploadedFile.size > MAX_FILE_SIZE) return res.status(400).json({ error: 'File size limit has been reached' });
 
         const credentials = new ServicePrincipalCredentials({
             clientId: process.env.PDF_SERVICES_CLIENT_ID,
@@ -30,28 +32,29 @@ router.post('/', async function(req, res, next) {
 
         const pdfServices = new PDFServices({ credentials });
 
-        readStream = fs.createReadStream(pdfFile.tempFilePath);
+        readStream = fs.createReadStream(uploadedFile.tempFilePath);
         const inputAsset = await pdfServices.upload({
             readStream,
             mimeType: MimeType.PDF
         });
 
-        const params = new CompressPDFParams({
-            compressionLevel: CompressionLevel.HIGH,
+        const params = new ProtectPDFParams({
+            userPassword,
+            encryptionAlgorithm: EncryptionAlgorithm.AES_256
         });
 
-        const job = new CompressPDFJob({ inputAsset, params });
+        const job = new ProtectPDFJob({ inputAsset, params });
 
         const pollingURL = await pdfServices.submit({ job });
         const pdfServicesResponse = await pdfServices.getJobResult({
             pollingURL,
-            resultType: CompressPDFResult
+            resultType: ProtectPDFResult
         });
 
         const resultAsset = pdfServicesResponse.result.asset;
-        const streamAsset = await pdfServices.getContent({ asset: resultAsset });
+        const streamAsset = await pdfServices.getContent({asset: resultAsset});
 
-        const uniqueFileName = pdfFile.name.slice(0,-3) + '-' + crypto.randomBytes(6).toString('hex') + '.pdf';
+        const uniqueFileName = uploadedFile.name.slice(0,-3) + '-' + crypto.randomBytes(6).toString('hex') + '.pdf';
         const tempFilePath = path.join(__dirname, '..', 'temp', uniqueFileName);
 
         const outputStream = fs.createWriteStream(tempFilePath);
