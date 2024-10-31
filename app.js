@@ -3,6 +3,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const fileUpload = require('express-fileupload');
 const path = require('path');
+const cors = require('cors');
 const { TEMP_FILE_DIR, RESULT_FILE_DIR, MAX_FILE_SIZE } = require('./constants');
 
 var compressPdfRouter = require('./routes/compress-pdf');
@@ -11,6 +12,9 @@ var protectPdfRouter = require('./routes/protect-pdf');
 var removePdfProtectionRouter = require('./routes/remove-pdf-protection');
 var app = express();
 
+app.use(cors({
+    origin: '*'
+}));
 app.use("/result", express.static(path.join(__dirname, RESULT_FILE_DIR)));
 app.use(fileUpload({
     limits: { fileSize: MAX_FILE_SIZE },
