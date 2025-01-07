@@ -12,23 +12,19 @@ const {
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, TEMP_FILE_LIFETIME } = require('../constants');
+const { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, TEMP_FILE_LIFETIME, COMPRESSION_LEVELS } = require('../constants');
 
 /* POST compress-pdf page. */
 router.post('/', async function(req, res, next) {
     let readStream;
     try {
-        const { pdf: pdfFile } = req.files;
-        const { compressionLevel = 'MEDIUM' } = req.body; // Default to MEDIUM if not specified
-        
+        const { pdf: pdfFile } = req?.files;
+        let compressionLevel = req?.body?.compressionLevel;
         if (!pdfFile) return res.status(400).json({ error: 'No file uploaded' });
         if (!ALLOWED_FILE_TYPES.includes(pdfFile.mimetype)) return res.status(400).json({ error: 'Invalid file type' });
         if (pdfFile.size > MAX_FILE_SIZE) return res.status(400).json({ error: 'File size limit has been reached' });
-        
-        // Validate compression level
-        const validLevels = ['LOW', 'MEDIUM', 'HIGH'];
-        if (!validLevels.includes(compressionLevel)) {
-            return res.status(400).json({ error: 'Invalid compression level. Use LOW, MEDIUM, or HIGH' });
+        if (!COMPRESSION_LEVELS.includes(compressionLevel)) {
+            compressionLevel = "HIGH"
         }
 
         const credentials = new ServicePrincipalCredentials({
@@ -45,7 +41,7 @@ router.post('/', async function(req, res, next) {
         });
 
         const params = new CompressPDFParams({
-            compressionLevel: CompressionLevel[compressionLevel],
+            compressionLevel: CompressionLevel[compressionLevel]
         });
 
         const job = new CompressPDFJob({ inputAsset, params });
