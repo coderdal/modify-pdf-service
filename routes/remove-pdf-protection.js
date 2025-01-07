@@ -67,7 +67,33 @@ router.post('/', async function(req, res, next) {
         res.status(200).json({ filePath: filePath });
     } catch (err) {
         console.log("Exception encountered while executing operation", err);
-        return res.status(500).json({ error: "An error occurred while processing your request" });
+        
+        // Handle specific error cases
+        if (err.errorCode === 'INVALID_PASSWORD') {
+            return res.status(400).json({ error: 'Incorrect password. Please check your password and try again.' });
+        }
+        
+        if (err.statusCode === 400) {
+            return res.status(400).json({ 
+                error: err.message || 'Invalid request. Please check your PDF and password.'
+            });
+        }
+
+        if (err.statusCode === 401 || err.statusCode === 403) {
+            return res.status(err.statusCode).json({ 
+                error: 'Authentication failed. Please try again later.'
+            });
+        }
+
+        if (err.statusCode === 429) {
+            return res.status(429).json({ 
+                error: 'Too many requests. Please try again later.'
+            });
+        }
+
+        return res.status(500).json({ 
+            error: "An error occurred while processing your request. Please try again."
+        });
     } finally {
         readStream?.destroy();
     }
