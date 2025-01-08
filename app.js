@@ -10,6 +10,8 @@ var compressPdfRouter = require('./routes/compress-pdf');
 var convertPdfRouter = require('./routes/convert-pdf');
 var protectPdfRouter = require('./routes/protect-pdf');
 var removePdfProtectionRouter = require('./routes/remove-pdf-protection');
+var splitPdfRouter = require('./routes/split-pdf');
+var reorderPdfRouter = require('./routes/reorder-pdf');
 var app = express();
 
 app.use(cors({
@@ -38,4 +40,6 @@ app.use('/compress-pdf', compressPdfRouter);
 app.use('/convert-pdf', convertPdfRouter);
 app.use('/protect-pdf', protectPdfRouter);
 app.use('/remove-pdf-protection', removePdfProtectionRouter);
+app.use('/split-pdf', splitPdfRouter);
+app.use('/reorder-pdf', reorderPdfRouter);
 module.exports = app;
