@@ -4,6 +4,7 @@ var logger = require('morgan');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs');
 const { TEMP_FILE_DIR, RESULT_FILE_DIR, MAX_FILE_SIZE } = require('./constants');
 
 var compressPdfRouter = require('./routes/compress-pdf');
@@ -17,7 +18,6 @@ var app = express();
 app.use(cors({
     origin: '*'
 }));
-app.use("/result", express.static(path.join(__dirname, RESULT_FILE_DIR)));
 app.use(fileUpload({
     limits: { fileSize: MAX_FILE_SIZE },
     useTempFiles: true,
@@ -42,4 +42,25 @@ app.use('/protect-pdf', protectPdfRouter);
 app.use('/remove-pdf-protection', removePdfProtectionRouter);
 app.use('/split-pdf', splitPdfRouter);
 app.use('/reorder-pdf', reorderPdfRouter);
+
+app.get("/result/:filename", (req, res) => {
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, RESULT_FILE_DIR, filename);
+
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+        if (err) {
+            return res.status(404).send('File not found');
+        }
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Length', fs.statSync(filePath).size);
+        res.download(filePath, (err) => {
+            if (err) {
+                res.status(404).send('File not found');
+            }
+        });
+    });
+});
+
 module.exports = app;
