@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
 const { TEMP_FILE_DIR, RESULT_FILE_DIR, MAX_FILE_SIZE } = require('./constants');
+const { errorHandler } = require('./middlewares/error.middleware');
 
 var compressPdfRouter = require('./routes/compress-pdf');
 var convertPdfRouter = require('./routes/convert-pdf');
@@ -62,5 +63,8 @@ app.get("/result/:filename", (req, res) => {
         });
     });
 });
+
+// Error handling middleware should be registered last
+app.use(errorHandler);
 
 module.exports = app;

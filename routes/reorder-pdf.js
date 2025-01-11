@@ -1,32 +1,65 @@
 const express = require('express');
 const router = express.Router();
-const { validateFileUpload } = require('../middlewares/fileUpload.middleware');
-const { asyncHandler } = require('../middlewares/error.middleware');
 const { reorderPdfSchema } = require('../validators/pdf.validator');
+const { validateSchema } = require('../middlewares/validation.middleware');
+const { AppError } = require('../middlewares/error.middleware');
 const pdfService = require('../services/pdf.service');
+const { validateFileUpload } = require('../middlewares/fileUpload.middleware');
 
-router.post('/', 
+router.post(
+    '/',
     validateFileUpload,
-    asyncHandler(async (req, res) => {
-        const { error, value } = reorderPdfSchema.validate(req.body);
-        if (error) {
-            return res.status(400).json({ 
-                status: 'error',
-                message: error.details[0].message,
-                code: 'VALIDATION_ERROR'
-            });
-        }
-        const pageOrder = value.pageOrder.split(',').map(Number);
-        const uniqueFileName = await pdfService.reorderPdf(req.files.pdf, pageOrder);
-        const filePath = `${req.protocol}://${req.get('host')}/result/${uniqueFileName}`;
-
-        res.status(200).json({ 
-            status: 'success',
-            data: {
-                filePath
+    validateSchema(reorderPdfSchema),
+    async (req, res, next) => {
+        try {
+            
+            if (!req.files?.pdf) {
+                throw new AppError('No PDF file uploaded', 400, 'FILE_REQUIRED');
             }
-        });
-    })
+            
+            const { pageOrder } = req.body;
+            if (!pageOrder) {
+                throw new AppError('Page order is required', 400, 'PAGE_ORDER_REQUIRED');
+            }
+
+            // Validate page order format
+            const pages = pageOrder.split(',').map(Number);
+            if (pages.some(page => isNaN(page) || page < 1)) {
+                throw new AppError(
+                    'Invalid page order. Please provide positive numbers separated by commas.',
+                    400,
+                    'INVALID_PAGE_ORDER'
+                );
+            }
+
+            // Check for duplicate pages
+            if (new Set(pages).size !== pages.length) {
+                throw new AppError(
+                    'Duplicate page numbers are not allowed',
+                    400,
+                    'DUPLICATE_PAGES'
+                );
+            }
+
+            try {
+                const uniqueFileName = await pdfService.reorderPdf(req.files.pdf, pageOrder);
+                const filePath = `${req.protocol}://${req.get('host')}/result/${uniqueFileName}`;
+    
+                res.status(200).json({ 
+                    status: 'success',
+                    data: {
+                        filePath,
+                        originalName: req.files.pdf.name
+                    }
+                });
+            } catch (error) {
+                // Let the error handler middleware handle the error
+                throw error;
+            }
+        } catch (error) {
+            next(error);
+        }
+    }
 );
 
 module.exports = router; 

@@ -32,10 +32,24 @@ const convertPdfSchema = Joi.object({
         .required()
 });
 
+const removePdfProtectionSchema = Joi.object({
+    password: Joi.string()
+        .required()
+        .min(1)
+        .max(128)
+        .messages({
+            'string.empty': 'Password is required',
+            'string.min': 'Password must be at least 1 character long',
+            'string.max': 'Password cannot be longer than 128 characters',
+            'any.required': 'Password is required'
+        })
+});
+
 module.exports = {
     compressPdfSchema,
     protectPdfSchema,
     splitPdfSchema,
     reorderPdfSchema,
-    convertPdfSchema
+    convertPdfSchema,
+    removePdfProtectionSchema
 }; 
