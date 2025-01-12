@@ -14,6 +14,7 @@ var protectPdfRouter = require('./routes/protect-pdf');
 var removePdfProtectionRouter = require('./routes/remove-pdf-protection');
 var splitPdfRouter = require('./routes/split-pdf');
 var reorderPdfRouter = require('./routes/reorder-pdf');
+var ocrPdfRouter = require('./routes/ocr-pdf');
 var app = express();
 
 app.use(cors({
@@ -43,6 +44,7 @@ app.use('/protect-pdf', protectPdfRouter);
 app.use('/remove-pdf-protection', removePdfProtectionRouter);
 app.use('/split-pdf', splitPdfRouter);
 app.use('/reorder-pdf', reorderPdfRouter);
+app.use('/ocr-pdf', ocrPdfRouter);
 
 app.get("/result/:filename", (req, res) => {
     const { filename } = req.params;

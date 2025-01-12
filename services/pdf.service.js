@@ -31,7 +31,12 @@ const {
     PageRanges,
     ReorderPagesParams,
     ReorderPagesJob,
-    ReorderPagesResult
+    ReorderPagesResult,
+    OCRJob,
+    OCRParams,
+    OCRSupportedLocale,
+    OCRSupportedType,
+    OCRResult
 } = require("@adobe/pdfservices-node-sdk");
 const fs = require('fs');
 const path = require('path');
@@ -666,6 +671,87 @@ class PdfService {
         const fileBuffer = fs.readFileSync(filePath);
         const pdfDoc = await PDFDocument.load(fileBuffer);
         return pdfDoc.getPageCount();
+    }
+
+    async ocrPdf(pdfFile, ocrLocale = 'en-US') {
+        let readStream;
+        try {
+            if (!pdfFile || !pdfFile.tempFilePath) {
+                throw new AppError('Invalid file upload', 400, 'INVALID_FILE');
+            }
+
+            readStream = fs.createReadStream(pdfFile.tempFilePath);
+            let inputAsset;
+            try {
+                inputAsset = await this.uploadFile(readStream);
+            } catch (uploadError) {
+                if (uploadError.message?.includes('network')) {
+                    throw new AppError('Network error while uploading file. Please try again.', 500, 'NETWORK_ERROR');
+                }
+                throw uploadError;
+            }
+
+            try {
+                const params = new OCRParams({
+                    ocrLocale: OCRSupportedLocale[ocrLocale.replace('-', '_')],
+                    ocrType: OCRSupportedType.SEARCHABLE_IMAGE_EXACT
+                });
+
+                const job = new OCRJob({ inputAsset, params });
+                const pollingURL = await this.pdfServices.submit({ job });
+                const pdfServicesResponse = await this.pdfServices.getJobResult({
+                    pollingURL,
+                    resultType: OCRResult
+                });
+
+                return await this.processResult(pdfServicesResponse, pdfFile.name);
+            } catch (ocrError) {
+                console.error('PDF OCR error:', {
+                    error: ocrError.message,
+                    stack: ocrError.stack,
+                    code: ocrError.code,
+                    errorCode: ocrError.errorCode
+                });
+
+                if (ocrError.message?.includes('quota')) {
+                    throw new AppError('Service quota exceeded. Please try again later.', 429, 'QUOTA_EXCEEDED');
+                }
+
+                if (ocrError.message?.includes('timeout')) {
+                    throw new AppError('Operation timed out. Please try again.', 408, 'OPERATION_TIMEOUT');
+                }
+
+                if (ocrError.message?.includes('corrupt') || ocrError.message?.includes('invalid')) {
+                    throw new AppError('The PDF file is corrupted or invalid', 400, 'INVALID_PDF');
+                }
+
+                if (ocrError.message?.includes('language') || ocrError.message?.includes('locale')) {
+                    throw new AppError('Invalid language specified', 400, 'INVALID_LANGUAGE');
+                }
+
+                throw new AppError(
+                    'Failed to perform OCR on PDF. Please try again later.',
+                    500,
+                    'OCR_FAILED'
+                );
+            }
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+
+            if (error.code === 'ENOENT') {
+                throw new AppError('File not found or not accessible', 400, 'FILE_NOT_FOUND');
+            }
+
+            throw new AppError(
+                'Failed to process PDF. Please try again later.',
+                500,
+                'PROCESSING_FAILED'
+            );
+        } finally {
+            readStream?.destroy();
+        }
     }
 }
 
