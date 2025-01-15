@@ -26,7 +26,6 @@ router.post(
                 throw new AppError('Page range is required', 400, 'PAGE_RANGE_REQUIRED');
             }
 
-            // Validate page numbers are positive integers
             if (!Number.isInteger(fromPage) || !Number.isInteger(toPage) || fromPage < 1 || toPage < 1) {
                 throw new AppError(
                     'Page numbers must be positive integers',
@@ -47,7 +46,6 @@ router.post(
                     }
                 });
             } catch (error) {
-                // Let the error handler middleware handle the error
                 throw error;
             }
         } catch (error) {

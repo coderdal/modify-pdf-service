@@ -8,7 +8,6 @@ const pdfService = require('../services/pdf.service');
 router.post('/', 
     validateFileUpload,
     asyncHandler(async (req, res) => {
-        // Validate request body
         const { error, value } = convertPdfSchema.validate(req.body);
         if (error) {
             throw new AppError(
@@ -18,7 +17,6 @@ router.post('/',
             );
         }
 
-        // Validate file presence (should be handled by validateFileUpload middleware, but double-check)
         if (!req.files?.pdf) {
             throw new AppError(
                 'No PDF file uploaded',
@@ -41,7 +39,6 @@ router.post('/',
                 }
             });
         } catch (error) {
-            // Let the error handler middleware handle the error
             throw error;
         }
     })

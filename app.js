@@ -17,9 +17,6 @@ var reorderPdfRouter = require('./routes/reorder-pdf');
 var ocrPdfRouter = require('./routes/ocr-pdf');
 var app = express();
 
-app.use(cors({
-    origin: '*'
-}));
 app.use(fileUpload({
     limits: { fileSize: MAX_FILE_SIZE },
     useTempFiles: true,
@@ -30,7 +27,7 @@ app.use(fileUpload({
     responseOnLimit: 'File size limit has been reached'
 }));
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL,
     credentials: true
 }));
 app.use(logger('dev'));
@@ -66,7 +63,6 @@ app.get("/result/:filename", (req, res) => {
     });
 });
 
-// Error handling middleware should be registered last
 app.use(errorHandler);
 
 module.exports = app;

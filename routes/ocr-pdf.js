@@ -31,7 +31,6 @@ router.post('/',
                 }
             });
         } catch (error) {
-            // Let the error handler middleware handle the error
             throw error;
         }
     })

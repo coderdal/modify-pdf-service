@@ -1,4 +1,4 @@
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const TEMP_FILE_LIFETIME = 5 * 60 * 1000;
 const TEMP_FILE_DIR = '/tmp/';
 const RESULT_FILE_DIR = 'temp';

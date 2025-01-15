@@ -22,7 +22,6 @@ router.post(
                 throw new AppError('Page order is required', 400, 'PAGE_ORDER_REQUIRED');
             }
 
-            // Validate page order format
             const pages = pageOrder.split(',').map(Number);
             if (pages.some(page => isNaN(page) || page < 1)) {
                 throw new AppError(
@@ -32,7 +31,6 @@ router.post(
                 );
             }
 
-            // Check for duplicate pages
             if (new Set(pages).size !== pages.length) {
                 throw new AppError(
                     'Duplicate page numbers are not allowed',
@@ -53,7 +51,6 @@ router.post(
                     }
                 });
             } catch (error) {
-                // Let the error handler middleware handle the error
                 throw error;
             }
         } catch (error) {
