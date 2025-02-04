@@ -1,0 +1,20 @@
+# Version control
+.git
+.gitignore
+
+# Environment variables
+.env
+.env.*
+
+# Temporary files
+tmp/*
+temp/*
+
+# Node modules
+node_modules
+
+# Logs
+*.log
+
+# OS files
+.DS_Store 
